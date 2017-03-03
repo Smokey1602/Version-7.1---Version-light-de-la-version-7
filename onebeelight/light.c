@@ -1,10 +1,9 @@
-//g++ -Wall -pthread -o light light.c -lpigpio -lrt -lwiringPi ` pkg-config --cflags --libs opencv`
+//g++ -Wall -pthread -o onebee light.c -lpigpio -lrt  `pkg-config --cflags --libs opencv` `mysql_config --cflags --libs` 
 
 #include "opencv2/core/core.hpp" //bibliotheque générale d'opencv
 #include "opencv2/highgui/highgui.hpp" //bibilotheque auxilliaire(traitement d'image)
 #include "opencv2/imgproc/imgproc.hpp" //bibliotheque auxilliaire(affochage des images)
 #include "opencv2/opencv.hpp" // Root des bibilotheques
-//#include "opencv2/gpu/gpu.hpp"
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream> //bibliotheque de gestion des entrées video
@@ -22,8 +21,6 @@ using namespace std;
 using namespace cv;
 
 //Variables de test pour compter le temps entre deux boucles//
-double cpt_clock=1;
-double total_elapsed=0;
 //////////////////////////////////////////////////////////////
 
 void calib_auto();//foncion de calibration automatique
@@ -75,7 +72,6 @@ Mat Graph; // matrice de sauvegarde de l'image du graphique (permet aussi d'affi
 
 VideoCapture capture(0); //initialisation du flux(on le met ici car toutes les fonctions profiterons du flux video sans redéclaration
 
-
 //////////////////////////////////////////////////////////////
 
 //------------Creation des variables de traitement d'image----------------
@@ -116,6 +112,7 @@ int deplacementVert[40]={0};
 int deplacementJaune[40]={0};
 int deplacementViolet[40]={0};
 int deplacementRouge[40]={0};
+
 
 //-------------------------variables communes au programme-----------------------
 
@@ -166,7 +163,7 @@ char NumeroRuche[20] ={0};
 char NomLieu[20] ={0};
 char NomProprio[20] ={0};
 
-clock_t start, end;
+
 // Création de la structure pour envoi de donnée sur les threads //
 struct thread_parametre
 {
@@ -176,6 +173,7 @@ struct thread_parametre
    int fin;
 };
 struct thread_parametre thread_param[4];
+
 
 ///////////////////////////////////////////////////////////////
 void sauvegarde_usb()
@@ -281,6 +279,7 @@ void sauvegarde_usb()
 }
 
 void calib_auto()
+{
 /*
 	Présentation :
 	Cette fonction ne prenant aucun de parametres et ne retournant rien nous permet d effectuer une calibration automatique
@@ -297,18 +296,17 @@ void calib_auto()
 	marquera la fin de la detection de la porte "1".
 */
 
-{
+
 	int flag0=0,flag255=0,ecart=0,matj=0,nbporte=0,i=0,tmp=0;
 	int calibauto[80]={0};
 	int flagcalib=1;
-	int trackbar=0;
-	int coulLigne=0;
+
 	sleep(5);
-	capture >> source;
+	capture >> source;	
 	waitKey(1);
-	capture >> source;
+	capture >> source;	
 	
-	//imshow("calibration",source);
+	//imshow("video",source);
 	cvtColor(source,hsvsource,CV_BGR2HSV);
 	inRange(hsvsource,Scalar(90,100,50,0),Scalar(130,255,255,0),masquesource);
 	suppressbruit(masquesource);
@@ -387,6 +385,7 @@ void calib_auto()
 			}
 			else
 			{
+
 				X[i]=calibauto[i+2]-5;
 				flagcalib=1;
 			}
@@ -398,30 +397,156 @@ void calib_auto()
 		X[0]=X[0]+5;
 		if(nombreporte<=0)
 		{
-			nombreporte=10;			
+			nombreporte=10;
+			
 		}	
-
-	
-		for(trackbar=0;trackbar<nombreporte*2;trackbar++)
-		{
-
-			if(coulLigne>=2)
-			{
-				line(source, Point(X[trackbar], 0), Point(X[trackbar], 640), Scalar(0,255,255), 2);
-				coulLigne=0;trackbar++;
-				line(source, Point(X[trackbar], 0), Point(X[trackbar], 640), Scalar(0,255,255), 2);
-			}
-			else
-			{
-				line(source, Point(X[trackbar], 0), Point(X[trackbar], 640), Scalar(0,255,0), 2);
-				coulLigne++;
-			}
+	printf("nbporte : %d \n",nombreporte);
+	switch (nombreporte)
+	{
+		case(1):
 		
-		}	
-
-		line(source, Point(0, Y[0]), Point(720, Y[0]), Scalar(0,0,0), 2);
-		line(source, Point(0, Y[1]), Point(720, Y[1]), Scalar(0,0,0), 2);
-		//imshow("Calibration",source);
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 1;
+			thread_param[1].debut = 0;
+			thread_param[1].fin   = 0;
+			thread_param[2].debut = 0;
+			thread_param[2].fin   = 0;
+			thread_param[3].debut = 0;
+			thread_param[3].fin   = 0;
+		break;
+		case(2):
+		
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 1;
+			thread_param[1].debut = 1;
+			thread_param[1].fin   = 2;
+			thread_param[2].debut = 0;
+			thread_param[2].fin   = 0;
+			thread_param[3].debut = 0;
+			thread_param[3].fin   = 0;
+		break;
+		case(3):
+		
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 1;
+			thread_param[1].debut = 1;
+			thread_param[1].fin   = 2;
+			thread_param[2].debut = 2;
+			thread_param[2].fin   = 3;
+			thread_param[3].debut = 0;
+			thread_param[3].fin   = 0;
+		break;
+		case(4):
+		
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 1;
+			thread_param[1].debut = 1;
+			thread_param[1].fin   = 2;
+			thread_param[2].debut = 2;
+			thread_param[2].fin   = 3;
+			thread_param[3].debut = 3;
+			thread_param[3].fin   = 4;
+		break;
+		case(5):
+		
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 2;
+			thread_param[1].debut = 2;
+			thread_param[1].fin   = 3;
+			thread_param[2].debut = 3;
+			thread_param[2].fin   = 4;
+			thread_param[3].debut = 4;
+			thread_param[3].fin   = 5;
+		break;
+		case(6):
+		
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 2;
+			thread_param[1].debut = 2;
+			thread_param[1].fin   = 4;
+			thread_param[2].debut = 4;
+			thread_param[2].fin   = 5;
+			thread_param[3].debut = 5;
+			thread_param[3].fin   = 6;
+		break;
+		case(7):
+		
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 2;
+			thread_param[1].debut = 2;
+			thread_param[1].fin   = 4;
+			thread_param[2].debut = 4;
+			thread_param[2].fin   = 6;
+			thread_param[3].debut = 6;
+			thread_param[3].fin   = 7;
+		break;
+		case(8):
+		
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 2;
+			thread_param[1].debut = 2;
+			thread_param[1].fin   = 4;
+			thread_param[2].debut = 4;
+			thread_param[2].fin   = 6;
+			thread_param[3].debut = 6;
+			thread_param[3].fin   = 8;
+		break;
+		case(9):
+		
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 3;
+			thread_param[1].debut = 3;
+			thread_param[1].fin   = 5;
+			thread_param[2].debut = 5;
+			thread_param[2].fin   = 7;
+			thread_param[3].debut = 7;
+			thread_param[3].fin   = 9;
+		break;
+		case(10):
+		
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 3;
+			thread_param[1].debut = 3;
+			thread_param[1].fin   = 6;
+			thread_param[2].debut = 6;
+			thread_param[2].fin   = 8;
+			thread_param[3].debut = 8;
+			thread_param[3].fin   = 10;
+		break;
+		case(11):
+		
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 3;
+			thread_param[1].debut = 3;
+			thread_param[1].fin   = 6;
+			thread_param[2].debut = 6;
+			thread_param[2].fin   = 9;
+			thread_param[3].debut = 9;
+			thread_param[3].fin   = 11;
+		break;
+		case(12):
+		
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 3;
+			thread_param[1].debut = 3;
+			thread_param[1].fin   = 6;
+			thread_param[2].debut = 6;
+			thread_param[2].fin   = 9;
+			thread_param[3].debut = 9;
+			thread_param[3].fin   = 12;
+		break;
+		case(13):
+		
+			thread_param[0].debut = 0;
+			thread_param[0].fin   = 4;
+			thread_param[1].debut = 4;
+			thread_param[1].fin   = 7;
+			thread_param[2].debut = 7;
+			thread_param[2].fin   = 10;
+			thread_param[3].debut = 10;
+			thread_param[3].fin   = 13;
+		break;
+	}
 }
 void sauvegarde_automatique() //contient aussi la sauvegarde de secours
 {
@@ -443,8 +568,8 @@ void sauvegarde_automatique() //contient aussi la sauvegarde de secours
 	if(oldday!=Jour)
 	{
 		
-		snprintf(image,sizeof(image),"Sauvegarde/Graphiques/Graphique_du_%s.jpg",DateString);
-		snprintf(image2,sizeof(image),"/var/www/html/Sauvegarde/Graphiques/Graphique_du_%s.jpg",DateString);
+		snprintf(image,sizeof(image),"/home/pi/Documents/onebee/Sauvegarde/Graphiques/Graphique_du_%s.jpg",DateString);
+		snprintf(image2,sizeof(image),"/var/www/Sauvegarde/Graphiques/Graphique_du_%s.jpg",DateString);
 		if(fopen(image,"r")==NULL)
 		{
 			Graph = imread("fond_graphique.jpg");
@@ -455,15 +580,12 @@ void sauvegarde_automatique() //contient aussi la sauvegarde de secours
 		}
 		imwrite(image,Graph);
 
-		snprintf(nom,sizeof(nom),"/var/www/html/Sauvegarde/Fichier_csv/%s.csv",DateString);///var/www/html/
-		snprintf(nom2,sizeof(nom2),"Sauvegarde/Fichier_csv/%s.csv",DateString);//on enregistre avec le fichier
+		snprintf(nom,sizeof(nom),"/var/www/Sauvegarde/Fichier_csv/%s.csv",DateString);///var/www/html/
+		snprintf(nom2,sizeof(nom2),"/home/pi/Documents/onebee/Sauvegarde/Fichier_csv/%s.csv",DateString);//on enregistre avec le fichier
 	
 		file=fopen(nom,"a+");	
 		file2=fopen(nom2,"a+");
-		//fprintf(file,"heure,entree,sortie\n");
-		//fprintf(file2,"heure,entree,sortie\n");
 		oldday=Jour;
-		//calib_auto();
 	
 	}
 
@@ -478,7 +600,7 @@ void sauvegarde_automatique() //contient aussi la sauvegarde de secours
 		if(compteurS>=minuteS)
 		{
 			//sauvegarde_graphique();
-
+			printf("Sauvegarde du %s a %s...\n",DateString,HeureMinute);
 			putText(source,"Sauvegarde", Point(250,240) , FONT_HERSHEY_SIMPLEX, 2, Scalar(0,0,255),2,false );
 			file=fopen(nom,"a+");	
 			file2=fopen(nom2,"a+");			
@@ -498,7 +620,7 @@ void sauvegarde_automatique() //contient aussi la sauvegarde de secours
 			snprintf(sentreeJaune,sizeof(sentreeJaune),"%d",entreeJaune);
 			snprintf(ssortieJaune,sizeof(ssortieJaune),"%d",sortieJaune);
 
-			sauvegarde_sql();
+			//sauvegarde_sql();
 			
 			entreeTotal=0;sortieTotal=0;
 			entreeBleu=0 ;sortieBleu=0;
@@ -566,9 +688,6 @@ void get_time()//fonction nous permettant de recuperer la date et l heure de la 
 	gettimeofday(&curTime, NULL);
 	if (seconds_last == curTime.tv_sec)
 	return;
-	printf("moyenne : %f ms \n", total_elapsed/cpt_clock);
-	printf("Entrees T=%d R=%d B=%d V=%d J=%d \n Sortie T=%d R=%d B=%d V=%d J=%d\n",entreeTotal,entreeRouge,entreeBleu,entreeVert,entreeJaune,sortieTotal,sortieRouge,sortieBleu,sortieVert,sortieJaune);
-
 	seconds_last = curTime.tv_sec;
 	
 	strftime(DateString, 80, "%d-%m-%Y", localtime(&curTime.tv_sec));
@@ -791,8 +910,7 @@ void suppressbruit(Mat Pic)
 	}
 int main(int argc, char **argv)
 {	
-	//clock_t start, end;
-	double elapsed=0;
+
 
 	//     Varaibles internes au Main    //
 	int i=0;	
@@ -804,6 +922,7 @@ int main(int argc, char **argv)
      		fprintf(stderr, "pigpio initialisation échouée\n");
      		return 1;
   	}
+
 	gpioSetMode(26, PI_INPUT);
 	gpioSetMode(25, PI_OUTPUT);
 	gpioWrite(25,0);
@@ -823,15 +942,11 @@ int main(int argc, char **argv)
 	
 
 	capture >> source;//Une premiere capture d'image pour notre fonction de calibration
-	
-	calib_auto();//nous recuperons le nombre de porte ici et leur positionnement
-	
-	
-	
-	
+	calib_auto();//nous recuperons le nombre de porte ici et leur positionnement	
+ 	
 	while(capture.read(source))
 {	
-
+	//imshow("flux",source);
 	if(gpioRead(26) == 1)
 	{
 		//printf("entree a 1\n");
@@ -850,22 +965,22 @@ int main(int argc, char **argv)
 		cvtColor(source(Rect(X[i*2],Y[0],X[i*2+1]-X[i*2],Y[1]-Y[0])),hsvcrop[i],CV_BGR2HSV);
 	}			
 			
-	if (pthread_create(&thread[0], NULL, &thread_1, NULL)) 
+	if (pthread_create(&thread[0], NULL, &thread_1, &thread_param[0])) 
 		{
 			perror("pthread_create");
 			return EXIT_FAILURE;
 		}
-	if (pthread_create(&thread[1], NULL, &thread_2, NULL)) 
+	if (pthread_create(&thread[1], NULL, &thread_2, &thread_param[1])) 
 		{
 			perror("pthread_create");
 			return EXIT_FAILURE;
 		}
-	if (pthread_create(&thread[2], NULL, &thread_3, NULL)) 
+	if (pthread_create(&thread[2], NULL, &thread_3, &thread_param[2])) 
 		{
 			perror("pthread_create");
 			return EXIT_FAILURE;
 		}
-	if (pthread_create(&thread[3], NULL, &thread_4, NULL)) 
+	if (pthread_create(&thread[3], NULL, &thread_4, &thread_param[3])) 
 		{
 			perror("pthread_create");
 			return EXIT_FAILURE;
@@ -882,11 +997,6 @@ int main(int argc, char **argv)
 	}
 	
 	sauvegarde_automatique();
-	end = clock();
-	elapsed = ((double)end - start) / CLOCKS_PER_SEC;
-	cpt_clock++;
-	total_elapsed=1000*elapsed+total_elapsed;
-	//printf("%d : entrée \n %d : sortie\n",entreeTotal,sortieTotal);
-	start =clock();
+	
 }
 }
